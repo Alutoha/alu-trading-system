@@ -1,2 +1,5 @@
 streamlit
 bcrypt
+yfinance
+pandas
+numpy
