@@ -4,7 +4,7 @@ import sqlite3
 import bcrypt
 import random
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import pytz
 import yfinance as yf
 import pandas as pd
@@ -122,7 +122,7 @@ def extend_user(uid, days):
         conn.commit()
     conn.close()
 
-# ==================== SYMBOL MAPPING ====================
+# ==================== SYMBOL & TIMEFRAME ====================
 SYMBOL_MAP = {
     "XAUUSD": "GC=F", "XAGUSD": "SI=F", "USOIL": "CL=F",
     "EURUSD": "EURUSD=X", "GBPUSD": "GBPUSD=X", "USDJPY": "USDJPY=X",
@@ -388,7 +388,7 @@ def ict_analysis_mtf(symbol, mode="Intraday"):
     signal = None
     reasons = []
     entry_price = sl_price = tp1 = tp2 = None
-    confidence = "C"  # default
+    confidence = "C"
     risk_level = "Medium"
     
     def near_zone(price, zone, threshold=0.008):
@@ -508,7 +508,7 @@ if "logged_in" not in st.session_state:
     st.session_state.page = "analisa"
     st.session_state.result = None
     st.session_state.tf = "Intraday"
-    st.session_state.lang = "id"  # default bahasa Indonesia
+    st.session_state.lang = "id"
 
 st.set_page_config(page_title="ATS", page_icon="📊", layout="wide")
 init_db()
@@ -528,13 +528,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ==================== HELPER FUNCTIONS ====================
+# ==================== HELPER: SESSION & JAM ====================
 def get_session_info():
-    """Mengembalikan sesi pasar berdasarkan waktu UTC+7 (WIB)"""
     tz = pytz.timezone("Asia/Jakarta")
     now = datetime.now(tz)
     hour = now.hour
-    # Sesi Asia: 07-15 WIB (Tokyo 08-16 JST) -> kita pakai 7-15
     if 7 <= hour < 15:
         session = "🇯🇵 Asia (Tokyo)"
     elif 15 <= hour < 20:
@@ -640,7 +638,6 @@ else:
     # Sidebar
     with st.sidebar:
         st.markdown(f"<h3 style='color:#00ff88;'>👤 {st.session_state.nama}</h3>", unsafe_allow_html=True)
-        # Pilihan bahasa
         lang = st.selectbox("Bahasa / Language", ["🇮🇩 Indonesia", "🇬🇧 English"], index=0)
         st.session_state.lang = "id" if "Indonesia" in lang else "en"
         
