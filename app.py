@@ -401,7 +401,7 @@ def ict_analysis_mtf(symbol, mode="Intraday"):
             if ifvg_e and ifvg_e['type'] == 'bullish_ifvg':
                 entry_price = ifvg_e['bottom'] if ifvg_e['bottom'] > price else price
                 sl_price = entry_df["Low"].iloc[sweep[1]]
-                reasons = [f"✅ Bias {config['bias_tf']}: Bullish", "✅ Sweep + iFVG Bullish (M5)"]
+                reasons = [f"✅ Bias {config['bias_tf']}: Bullish", "✅ Sweep + iFVG Bullish"]
                 tp1 = price + (price - sl_price) * 1.2
                 tp2 = price + (price - sl_price) * 2
                 signal = "BUY"
@@ -443,7 +443,7 @@ def ict_analysis_mtf(symbol, mode="Intraday"):
             if ifvg_e and ifvg_e['type'] == 'bearish_ifvg':
                 entry_price = ifvg_e['top'] if ifvg_e['top'] < price else price
                 sl_price = entry_df["High"].iloc[sweep[1]]
-                reasons = ["✅ Bias Bearish", "✅ Sweep + iFVG Bearish (M5)"]
+                reasons = ["✅ Bias Bearish", "✅ Sweep + iFVG Bearish"]
                 tp1 = price - (sl_price - price) * 1.2
                 tp2 = price - (sl_price - price) * 2
                 signal = "SELL"
@@ -513,7 +513,7 @@ if "logged_in" not in st.session_state:
 st.set_page_config(page_title="ATS", page_icon="📊", layout="wide")
 init_db()
 
-# CSS
+# CSS + Jam Real-time dengan JavaScript
 st.markdown("""
 <style>
 .stApp {background:#0E1117}
@@ -524,24 +524,27 @@ st.markdown("""
 .details {background:#1a1a2e;border-radius:15px;padding:20px;margin:15px 0;text-align:left}
 .details p {font-size:18px;color:#e0e0e0}
 .stButton>button {border-radius:12px;font-weight:bold;padding:12px 24px}
-.market-session { color:#888; font-size:14px; margin-left:10px; }
+#live-clock {color:#888; font-size:16px; text-align:right;}
 </style>
-""", unsafe_allow_html=True)
 
-# ==================== HELPER: SESSION & JAM ====================
-def get_session_info():
-    tz = pytz.timezone("Asia/Jakarta")
-    now = datetime.now(tz)
-    hour = now.hour
-    if 7 <= hour < 15:
-        session = "🇯🇵 Asia (Tokyo)"
-    elif 15 <= hour < 20:
-        session = "🇬🇧 London"
-    elif 20 <= hour < 23:
-        session = "🇺🇸 New York (Early)"
-    else:
-        session = "🇺🇸 New York (Late) / Closed"
-    return session, now.strftime("%H:%M:%S WIB")
+<div id="live-clock" style="text-align:right; padding:5px;"></div>
+<script>
+function updateClock() {
+    var now = new Date();
+    var options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    var timeString = now.toLocaleTimeString('id-ID', options);
+    var session = "";
+    var hour = now.getHours();
+    if (hour >= 7 && hour < 15) session = "🇯🇵 Asia (Tokyo)";
+    else if (hour >= 15 && hour < 20) session = "🇬🇧 London";
+    else if (hour >= 20 && hour < 23) session = "🇺🇸 New York (Early)";
+    else session = "🇺🇸 New York (Late) / Closed";
+    document.getElementById('live-clock').innerHTML = "🕒 " + timeString + " WIB<br>" + session;
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+""", unsafe_allow_html=True)
 
 # ==================== LOGIN PAGE ====================
 if not st.session_state.logged_in:
@@ -661,15 +664,13 @@ else:
             st.session_state.logged_in = False
             st.rerun()
 
-    # Header dengan jam & sesi
+    # Header (tanpa jam karena sudah ada di javascript)
     col1, col2 = st.columns([2, 1])
     with col1:
         st.markdown("<h2 style='color:#00ff88;'>📊 ATS / Alu Trading System</h2>", unsafe_allow_html=True)
     with col2:
-        session, jam = get_session_info()
-        st.markdown(f"<p style='text-align:right;color:#888;'>🕒 {jam}<br>{session}</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:right; color:#888;'>Jam & Sesi pasar ditampilkan di atas (real-time)</p>", unsafe_allow_html=True)
     
-    # Nama user & tanggal
     st.markdown(f"<p style='color:#ccc;'>👤 {st.session_state.nama} | 📅 {datetime.now().strftime('%d %B %Y')}</p>", unsafe_allow_html=True)
     st.markdown("---")
     
@@ -716,7 +717,7 @@ else:
         <script>new TradingView.widget({{"width":"100%","height":500,"symbol":"{tv_sym}","interval":"{tv_interval}","timezone":"Asia/Jakarta","theme":"dark","style":"1","locale":"id","toolbar_bg":"#0E1117","enable_publishing":false,"hide_side_toolbar":false,"allow_symbol_change":false,"studies":["RSI@tv-basicstudies","MACD@tv-basicstudies"],"container_id":"tv"}});</script></div>"""
         components.html(tv, height=520)
         
-        # Hanya tombol Analisa
+        # HANYA TOMBOL ANALISA (TIDAK ADA BERITA DLL)
         st.markdown("---")
         if st.button("🔍 ANALISA SMC/ICT", use_container_width=True):
             with st.spinner("Menganalisa multi-timeframe..."):
@@ -739,10 +740,8 @@ else:
             emj = "🟢" if sig=="BUY" else "🔴"
             st.markdown(f"<div class='{cls}'><p>📈 SINYAL ICT + PA</p><h1>{emj} {sig}</h1><p style='color:#fff'>{pair} · {res['mode']} (MTF)</p></div>", unsafe_allow_html=True)
             
-            # Detail sinyal
             st.markdown(f"<div class='details'><p>📍 ENTRY : {res['entry']:.2f}</p><p>🛑 SL : {res['sl']:.2f}</p><p>🎯 TP1 : {res['tp1']:.2f}</p><p>🎯 TP2 : {res['tp2']:.2f}</p></div>", unsafe_allow_html=True)
             
-            # Alasan
             st.markdown("### 📝 Alasan Entry")
             st.markdown(f"<div style='background:#1a1a2e;border-radius:15px;padding:20px;color:#ccc'><ul>{''.join(f'<li>{r}</li>' for r in res['reasons'])}</ul></div>", unsafe_allow_html=True)
             
@@ -756,7 +755,6 @@ else:
             with col3:
                 st.metric("Bias HTF", f"{res['bias']} ({res['bias_tf']})")
             
-            # Deskripsi tambahan
             deskripsi = f"""
             <div style='background:#1a1a2e; border-radius:15px; padding:20px; color:#ccc; margin-top:10px;'>
                 <p><b>Struktur Market:</b> Bias {res['bias']} dari {res['bias_tf']} menunjukkan potensi kelanjutan tren. 
